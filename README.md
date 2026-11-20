@@ -1,8 +1,8 @@
 # Port Solano
 
-[![make.fun — "Make GTA 6" bounty entry by @qtz](https://make.fun/api/badge/competitions/gta6-01/entry.svg?u=qtz)](https://make.fun/bounty/gta6-01)
-[![Follow @qtz on make.fun](https://make.fun/api/badge/follow.svg?u=qtz)](https://make.fun/@qtz)
-[![Invited by @qtz — join make.fun](https://make.fun/api/badge/referral.svg?u=qtz&code=cxst033q)](https://make.fun/invite/cxst033q)
+[![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![rank](https://make.fun/badge/gta6-01/fajarekomulyawan/port-solano/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![reward](https://make.fun/badge/gta6-01/fajarekomulyawan/port-solano/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 
 **Port Solano** is an original top-down open-world crime game that runs entirely in the
 browser. You are **Marco Reyes**, a wheelman who just arrived in a sun-soaked coastal city
