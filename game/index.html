@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Port Solano — an open-world crime game</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1020; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: #fff; }
+  #game { display: block; width: 100%; height: 100%; }
+
+  /* ---------- HUD ---------- */
+  #hud { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  .chip { background: rgba(8, 12, 20, 0.58); border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 10px; padding: 8px 12px; backdrop-filter: blur(2px); }
+  .topleft { position: absolute; top: 14px; left: 14px; min-width: 210px; }
+  .barLabel { font-size: 11px; letter-spacing: 2px; opacity: 0.85; }
+  #healthBar { height: 13px; background: rgba(255,255,255,0.18); border-radius: 7px; overflow: hidden; margin: 4px 0 6px; }
+  #healthFill { height: 100%; width: 100%; background: #57cc5e; border-radius: 7px; transition: width 0.15s; }
+  #money { font-size: 22px; font-weight: 800; color: #7bf1a8; letter-spacing: 0.5px; }
+  .topright { position: absolute; top: 14px; right: 14px; text-align: right; }
+  #stars { font-size: 27px; letter-spacing: 3px; color: rgba(255,255,255,0.35); text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+  #weapon { margin-top: 5px; display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; }
+  .topcenter { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); text-align: center; width: min(620px, 60vw); }
+  #objTitle { font-size: 12px; font-weight: 800; letter-spacing: 2.5px; color: #ffd60a; }
+  #objText { font-size: 15px; margin-top: 2px; }
+  #timer { display: none; margin: 8px auto 0; width: max-content; font-size: 30px; font-weight: 800;
+           background: rgba(8,12,20,0.58); border-radius: 10px; padding: 2px 16px; }
+  #missionChip { display: none; margin: 8px auto 0; width: max-content; font-size: 12px; font-weight: 800;
+                 letter-spacing: 2px; color: #ffd60a; background: rgba(8,12,20,0.58);
+                 border: 1px solid rgba(255,214,10,0.5); border-radius: 999px; padding: 4px 12px; }
+  #arrestBar { display: none; margin: 8px auto 0; width: 220px; height: 10px; background: rgba(255,255,255,0.2);
+               border-radius: 6px; overflow: hidden; }
+  #arrestFill { height: 100%; width: 0%; background: #ffd60a; }
+  #banner { position: absolute; top: 24%; left: 50%; transform: translate(-50%, -50%) scale(0.92);
+            text-align: center; opacity: 0; transition: opacity 0.35s, transform 0.35s; width: 92vw; }
+  #banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #bannerTitle { font-size: clamp(26px, 4.6vw, 46px); font-weight: 900; letter-spacing: 3px; color: #ffd60a;
+                 text-shadow: 0 3px 0 #b8860b, 0 6px 22px rgba(0,0,0,0.65); }
+  #bannerSub { font-size: clamp(14px, 1.8vw, 19px); margin-top: 8px; color: #fff;
+               text-shadow: 0 2px 10px rgba(0,0,0,0.9); }
+  #flash { position: absolute; top: 35%; left: 50%; transform: translateX(-50%); font-size: 17px; font-weight: 600;
+           color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.9); opacity: 0; transition: opacity 0.3s; text-align: center; width: 90vw; }
+  #flash.show { opacity: 1; }
+  #prompt { position: absolute; bottom: 118px; left: 50%; transform: translateX(-50%); display: none;
+            font-size: 15px; font-weight: 700; background: rgba(8,12,20,0.65); padding: 7px 16px; border-radius: 999px; }
+  .bottomleft { position: absolute; left: 14px; bottom: 14px; text-align: center; }
+  #minimap { border: 2px solid rgba(255,255,255,0.35); border-radius: 8px; display: block; }
+  .mapLabel { font-size: 10px; letter-spacing: 3px; margin-top: 4px; opacity: 0.9; text-shadow: 0 1px 4px #000; }
+  .bottomright { position: absolute; right: 14px; bottom: 14px; font-size: 12px; opacity: 0.85; text-align: right;
+                 text-shadow: 0 1px 4px #000; line-height: 1.7; }
+
+  /* ---------- Overlays ---------- */
+  .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+             flex-direction: column; text-align: center; z-index: 10; padding: 24px; }
+  .overlay.show { display: flex; }
+  #titleScreen { background: linear-gradient(180deg, #ffb35c 0%, #ff7b54 30%, #e63946 58%, #5b2a86 82%, #14213d 100%); }
+  #titleScreen h1 { font-size: clamp(52px, 10vw, 110px); font-weight: 900; letter-spacing: 6px; line-height: 0.95;
+                    color: #fff; text-shadow: 0 4px 0 #e63946, 0 10px 34px rgba(0,0,0,0.55); }
+  #titleScreen .sub { font-size: clamp(15px, 2.2vw, 21px); letter-spacing: 4px; margin-top: 10px; color: #ffe8d6; }
+  .story { max-width: 560px; margin-top: 18px; font-size: 15px; line-height: 1.55; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+  .btnRow { display: flex; gap: 14px; margin-top: 26px; flex-wrap: wrap; justify-content: center; }
+  button { pointer-events: auto; cursor: pointer; border: none; border-radius: 999px; padding: 13px 34px;
+           font-size: 17px; font-weight: 800; letter-spacing: 1px; background: #ffd60a; color: #14213d;
+           box-shadow: 0 5px 0 #b8860b, 0 10px 22px rgba(0,0,0,0.35); transition: transform 0.08s, box-shadow 0.08s; }
+  button:hover { transform: translateY(-2px); }
+  button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b8860b; }
+  button.ghost { background: rgba(255,255,255,0.14); color: #fff; box-shadow: none; border: 1px solid rgba(255,255,255,0.5); }
+  .controls { margin-top: 28px; display: grid; grid-template-columns: auto auto; gap: 4px 18px;
+              font-size: 13.5px; text-align: left; background: rgba(10,10,25,0.35); padding: 14px 20px; border-radius: 12px; }
+  .controls b { color: #ffd60a; text-align: right; }
+  .fineprint { margin-top: 20px; font-size: 12px; opacity: 0.75; }
+  #pauseMenu { background: rgba(6, 8, 16, 0.78); }
+  #pauseMenu h2 { font-size: 44px; letter-spacing: 6px; margin-bottom: 8px; }
+  #pauseMenu .btnRow { flex-direction: column; align-items: center; margin-top: 16px; }
+  #pauseMenu button { width: 260px; }
+  #saveNote { margin-top: 14px; font-size: 14px; color: #7bf1a8; min-height: 20px; }
+  #wastedScreen { background: rgba(30, 0, 0, 0.55); }
+  #wastedScreen h1 { font-size: clamp(56px, 11vw, 120px); font-weight: 900; letter-spacing: 14px; color: #c1121f;
+                     text-shadow: 0 6px 30px rgba(0,0,0,0.8); }
+  #bustedScreen { background: rgba(0, 8, 30, 0.55); }
+  #bustedScreen h1 { font-size: clamp(56px, 11vw, 120px); font-weight: 900; letter-spacing: 14px; color: #4cc9f0;
+                     text-shadow: 0 6px 30px rgba(0,0,0,0.8); }
+  .overlay p { font-size: 17px; margin-top: 10px; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+  #endingCard { background: rgba(6, 8, 16, 0.72); }
+  #endingCard h2 { font-size: clamp(34px, 6vw, 58px); letter-spacing: 4px; color: #ffd60a; }
+  #endingStats { max-width: 520px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="topleft chip">
+    <div class="barLabel">MARCO REYES</div>
+    <div id="healthBar"><div id="healthFill"></div></div>
+    <div id="money">$100</div>
+  </div>
+  <div class="topright">
+    <div id="stars">☆☆☆☆☆</div><br>
+    <div id="weapon" class="chip">FISTS</div>
+  </div>
+  <div class="topcenter">
+    <div id="objective" class="chip" style="display:none">
+      <div id="objTitle"></div>
+      <div id="objText"></div>
+    </div>
+    <div id="timer">0:00</div>
+    <div id="missionChip"></div>
+    <div id="arrestBar"><div id="arrestFill"></div></div>
+  </div>
+  <div id="banner"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
+  <div id="flash"></div>
+  <div id="prompt"></div>
+  <div class="bottomleft">
+    <canvas id="minimap" width="176" height="132"></canvas>
+    <div class="mapLabel">PORT SOLANO</div>
+  </div>
+  <div class="bottomright">WASD drive / walk · E enter car · F punch<br>Mouse aim + click — pistol · ESC pause · M mute</div>
+</div>
+
+<div id="titleScreen" class="overlay show">
+  <h1>PORT<br>SOLANO</h1>
+  <div class="sub">AN OPEN-WORLD CRIME STORY</div>
+  <p class="story">Marco Reyes just rolled into a sun-soaked coastal city with empty pockets and a
+     fast pair of hands. Fixer <b>Dona Carla</b> has work: steal the car, move the package,
+     wreck the convoy, and get to the boat — if the Port Solano PD lets you.</p>
+  <div class="btnRow">
+    <button id="btnNewGame">NEW GAME</button>
+    <button id="btnContinue" class="ghost" style="display:none">CONTINUE</button>
+  </div>
+  <div class="controls">
+    <b>W A S D</b><span>Walk / drive</span>
+    <b>SHIFT</b><span>Sprint</span>
+    <b>E</b><span>Enter / exit a car</span>
+    <b>SPACE</b><span>Handbrake</span>
+    <b>F</b><span>Punch</span>
+    <b>MOUSE + CLICK</b><span>Aim &amp; fire the pistol</span>
+    <b>ESC / P</b><span>Pause</span>
+    <b>M</b><span>Mute</span>
+  </div>
+  <div class="fineprint">Vanilla JavaScript · every sprite drawn in code · every sound synthesized · plays fully offline</div>
+</div>
+
+<div id="pauseMenu" class="overlay">
+  <h2>PAUSED</h2>
+  <div class="btnRow">
+    <button id="btnResume">RESUME</button>
+    <button id="btnSaveGame" class="ghost">SAVE GAME</button>
+    <button id="btnMute" class="ghost">SOUND: ON</button>
+    <button id="btnRestart" class="ghost">RESTART STORY</button>
+  </div>
+  <div id="saveNote"></div>
+</div>
+
+<div id="wastedScreen" class="overlay">
+  <h1>WASTED</h1>
+  <p>The hospital patched you up and billed you $200.</p>
+  <p style="opacity:0.8">Respawning…</p>
+</div>
+
+<div id="bustedScreen" class="overlay">
+  <h1>BUSTED</h1>
+  <p id="bustedFine">The Port Solano PD took your pistol and a fine.</p>
+  <p style="opacity:0.8">Released from the station…</p>
+</div>
+
+<div id="endingCard" class="overlay">
+  <h2>STORY COMPLETE</h2>
+  <p id="endingStats"></p>
+  <div class="btnRow"><button id="btnFreeRoam">KEEP PLAYING — FREE ROAM</button></div>
+</div>
+
+<script src="src/rng.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/save.js"></script>
+<script src="src/city.js"></script>
+<script src="src/vehicles.js"></script>
+<script src="src/pedestrians.js"></script>
+<script src="src/police.js"></script>
+<script src="src/player.js"></script>
+<script src="src/missions.js"></script>
+<script src="src/hud.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
